@@ -1,0 +1,11 @@
+{
+  "name": "Telehealth Link",
+  "description": "遠距醫療掛號與線上看診管理系統 - 包含健保卡 OCR 辨識、視訊看診與病歷管理。",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

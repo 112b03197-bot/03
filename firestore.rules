@@ -1,0 +1,108 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && getUserData().role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isDoctor() {
+      return hasRole('doctor');
+    }
+
+    // Collection 1: Users
+    match /users/{userId} {
+      allow get: if isSignedIn() && (isOwner(userId) || isDoctor() || isAdmin());
+      allow list: if isSignedIn() && (isDoctor() || isAdmin());
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.role == 'patient';
+      allow update: if isSignedIn() && (
+        isOwner(userId) && request.resource.data.role == resource.data.role // Patients cannot escalate roles
+        || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Collection 2: Doctors
+    match /doctors/{doctorId} {
+      allow read: if isSignedIn(); // Patients can find doctor profiles
+      allow create: if isAdmin();
+      allow update: if isAdmin() || (isDoctor() && request.auth.uid == doctorId);
+      allow delete: if isAdmin();
+    }
+
+    // Collection 3: Appointments
+    match /appointments/{appointmentId} {
+      allow get: if isSignedIn() && (
+        request.auth.uid == resource.data.patientId ||
+        request.auth.uid == resource.data.doctorId ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.doctorId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && (
+        request.resource.data.patientId == request.auth.uid ||
+        isDoctor() ||
+        isAdmin()
+      );
+      allow update: if isSignedIn() && (
+        request.resource.data.patientId == resource.data.patientId && (
+          // Patient cancelling their own appointment
+          (request.auth.uid == resource.data.patientId && request.resource.data.status == 'cancelled') ||
+          // Doctor updating meeting, calls or diagnosable statuses
+          (request.auth.uid == resource.data.doctorId) ||
+          isAdmin()
+        )
+      );
+      allow delete: if isAdmin();
+    }
+
+    // Collection 4: Medical Records
+    match /medical_records/{recordId} {
+      allow get: if isSignedIn() && (
+        request.auth.uid == resource.data.patientId ||
+        request.auth.uid == resource.data.doctorId ||
+        isAdmin()
+      );
+      allow list: if isSignedIn() && (
+        resource.data.patientId == request.auth.uid ||
+        resource.data.doctorId == request.auth.uid ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && (isDoctor() || isAdmin());
+      allow update: if isSignedIn() && (
+        (isDoctor() && request.auth.uid == resource.data.doctorId) ||
+        isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}

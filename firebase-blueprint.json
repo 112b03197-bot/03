@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role details and optional national health insurance card info.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["patient", "doctor", "admin"] },
+        "phone": { "type": "string" },
+        "birthday": { "type": "string", "format": "date" },
+        "gender": { "type": "string", "enum": ["male", "female", "other"] },
+        "healthCardId": { "type": "string" },
+        "healthCardPhotoUrl": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "isVerified": { "type": "boolean" }
+      },
+      "required": ["id", "email", "name", "role", "createdAt"]
+    },
+    "DoctorProfile": {
+      "title": "DoctorProfile",
+      "description": "Profile detail for medical doctors including schedule configurations.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "department": { "type": "string" },
+        "title": { "type": "string" },
+        "bio": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "schedule": { "type": "array" }
+      },
+      "required": ["id", "name", "email", "department", "title", "photoUrl", "schedule"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Telehealth appointment details linking patient, doctor, and calendar slot.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientBirthday": { "type": "string" },
+        "patientGender": { "type": "string" },
+        "patientHealthCardId": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "department": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "period": { "type": "string", "enum": ["morning", "afternoon", "evening"] },
+        "slotNumber": { "type": "integer" },
+        "status": { "type": "string", "enum": ["scheduled", "calling", "completed", "cancelled"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "patientId", "patientName", "doctorId", "doctorName", "department", "date", "period", "slotNumber", "status", "createdAt"]
+    },
+    "MedicalRecord": {
+      "title": "MedicalRecord",
+      "description": "Electronic health record created after online consultation completed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "appointmentId": { "type": "string" },
+        "patientId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientBirthday": { "type": "string" },
+        "patientGender": { "type": "string" },
+        "doctorId": { "type": "string" },
+        "doctorName": { "type": "string" },
+        "department": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "symptoms": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "treatment": { "type": "string" },
+        "prescription": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "appointmentId", "patientId", "patientName", "doctorId", "doctorName", "department", "date", "symptoms", "diagnosis", "treatment", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Users collection housing patient and clinical profile records mapped by auth uid."
+    },
+    "/doctors/{doctorId}": {
+      "schema": "DoctorProfile",
+      "description": "Doctor profile info and clinician visual schedule settings."
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "Appointment bookings that map patient queues, status levels, scheduling details."
+    },
+    "/medical_records/{recordId}": {
+      "schema": "MedicalRecord",
+      "description": "Electronic medical files generated after medical diagnostics are submitted."
+    }
+  }
+}

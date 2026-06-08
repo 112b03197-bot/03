@@ -1,0 +1,13 @@
+# netlify.toml
+# Telehealth Link - Deployment configurations for Netlify
+
+[build]
+  publish = "dist"
+  command = "npm run build"
+
+# SPA redirection rules to secure dynamic deep routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+  force = false
